@@ -17,7 +17,9 @@ from evals.samplers.applied_samplers.tavily_sampler import (
     TavilySampler,
 )
 from evals.samplers.applied_samplers.you_search_sampler import (
+    YouEcoSearchSampler,
     YouFinanceResearchSampler,
+    YouLiteSearchSampler,
     YouLivecrawlSampler,
     YouResearchSampler,
     YouSearchSnippetsSampler,
@@ -29,6 +31,14 @@ SAMPLERS = [
         sampler_name="you_search_with_livecrawl",
         api_key=os.getenv("YOU_API_KEY"),
         include_news_results=False,
+    ),
+    YouEcoSearchSampler(
+        sampler_name="you_eco_search",
+        api_key=os.getenv("YOU_API_KEY"),
+    ),
+    YouLiteSearchSampler(
+        sampler_name="you_lite_search",
+        api_key=os.getenv("YOU_API_KEY"),
     ),
     YouResearchSampler(
         sampler_name="you_research_lite",

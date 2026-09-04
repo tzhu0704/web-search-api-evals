@@ -219,3 +219,101 @@ class YouFinanceResearchSampler(BaseAPISampler):
     def format_results(self, results: Any) -> str:
         output = results.get("output", {}) if isinstance(results, dict) else {}
         return output.get("content", "")
+
+
+class YouEcoSearchSampler(BaseAPISampler):
+    """Sampler for You.com's lightweight, snippet-only Eco Search API."""
+
+    def __init__(
+        self,
+        sampler_name: str,
+        api_key: str = None,
+        offset: int = 0,
+        timeout: float = 60.0,
+        max_retries: int = 3,
+    ):
+        self.offset = offset
+        super().__init__(
+            sampler_name=sampler_name,
+            api_key=api_key,
+            timeout=timeout,
+            max_retries=max_retries,
+        )
+
+    @staticmethod
+    def _get_base_url() -> str:
+        return "https://ydc-index.io"
+
+    @staticmethod
+    def _get_endpoint() -> str:
+        return "/v1/eco_search"
+
+    @staticmethod
+    def _get_method() -> str:
+        return "GET"
+
+    def _get_headers(self) -> Dict[str, str]:
+        return {"X-API-Key": self.api_key}
+
+    def _get_payload(self, query: str) -> Dict[str, Any]:
+        return {"query": query, "offset": self.offset}
+
+    def format_results(self, results: Any) -> list[str]:
+        web_results = results.get("results", {}).get("web", [])
+        return [
+            f"[{result.get('title', '')}]({result.get('url', '')})\n"
+            f"snippet: {' '.join(result.get('snippets', []))}\n"
+            f"description: {result.get('description', '')}"
+            for result in web_results
+            if isinstance(result, dict)
+        ]
+
+
+class YouLiteSearchSampler(BaseAPISampler):
+    """Sampler for You.com's low-cost Lite Search API."""
+
+    def __init__(
+        self,
+        sampler_name: str,
+        api_key: str = None,
+        count: int = 10,
+        timeout: float = 60.0,
+        max_retries: int = 3,
+    ):
+        self.count = count
+        super().__init__(
+            sampler_name=sampler_name,
+            api_key=api_key,
+            timeout=timeout,
+            max_retries=max_retries,
+        )
+
+    @staticmethod
+    def _get_base_url() -> str:
+        return "https://ydc-index.io"
+
+    @staticmethod
+    def _get_endpoint() -> str:
+        return "/v2/search"
+
+    @staticmethod
+    def _get_method() -> str:
+        return "POST"
+
+    def _get_headers(self) -> Dict[str, str]:
+        return {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "X-API-Key": self.api_key,
+        }
+
+    def _get_payload(self, query: str) -> Dict[str, Any]:
+        return {"query": query, "mode": "lite", "count": self.count}
+
+    def format_results(self, results: Any) -> list[str]:
+        return [
+            f"[{result.get('title', '')}]({result.get('url', '')})\n"
+            f"highlights: {' '.join(result.get('highlights', []))}"
+            for result in results.get("results", [])
+            if isinstance(result, dict)
+        ]
