@@ -7,9 +7,12 @@ Google SERP–based sampler. For each query, search results are fetched from the
 using an LLM, then graded against the ground truth.[^1] It also includes a dedicated [finance evaluation](#finance-evaluation) suite for benchmarking financial data retrieval.
 
 You.com's standard samplers include `you_search`, `you_search_with_livecrawl`,
+`you_search_with_highlights` (query-aware Web Search highlights),
+`you_search_with_highlights_and_knowledge_core` (highlights plus core
+structured knowledge),
 `you_eco_search` (snippet-only Eco Search), and `you_lite_search` (Lite Search
-with result highlights). Eco Search and Lite Search use `YOU_API_KEY` and are
-included in default non-Research evaluations.
+with result highlights). All use `YOU_API_KEY` and are included in default
+non-Research evaluations.
 
 To learn more about our evals methodology and system architecture, please read You.com's research articles:
 - [How to Evaluate AI Search in the Agentic Era: A Sneak Peek](https://you.com/resources/sneak-peek-how-to-evaluate-ai-search-in-the-agentic-era)

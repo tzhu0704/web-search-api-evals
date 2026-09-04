@@ -1,3 +1,4 @@
+import json
 from typing import Any, Dict
 
 import youdotcom
@@ -317,3 +318,78 @@ class YouLiteSearchSampler(BaseAPISampler):
             for result in results.get("results", [])
             if isinstance(result, dict)
         ]
+
+
+class YouWebSearchHighlightsSampler(BaseAPISampler):
+    """Sampler for You.com's Web Search API with query-aware highlights."""
+
+    def __init__(
+        self,
+        sampler_name: str,
+        api_key: str = None,
+        count: int = 10,
+        timeout: float = 60.0,
+        max_retries: int = 3,
+    ):
+        self.count = count
+        super().__init__(
+            sampler_name=sampler_name,
+            api_key=api_key,
+            timeout=timeout,
+            max_retries=max_retries,
+        )
+
+    @staticmethod
+    def _get_base_url() -> str:
+        return "https://ydc-index.io"
+
+    @staticmethod
+    def _get_endpoint() -> str:
+        return "/v1/search"
+
+    @staticmethod
+    def _get_method() -> str:
+        return "POST"
+
+    def _get_headers(self) -> Dict[str, str]:
+        return {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "X-API-Key": self.api_key,
+        }
+
+    def _get_payload(self, query: str) -> Dict[str, Any]:
+        return {
+            "query": query,
+            "count": self.count,
+            "extraction": {"extraction_mode": "highlights"},
+        }
+
+    def format_results(self, results: Any) -> list[str]:
+        web_results = results.get("results", {}).get("web", [])
+        return [
+            f"[{result.get('title', '')}]({result.get('url', '')})\n"
+            f"highlights: {' '.join(result.get('contents', {}).get('highlights', []))}\n"
+            f"description: {result.get('description', '')}"
+            for result in web_results
+            if isinstance(result, dict)
+        ]
+
+
+class YouWebSearchHighlightsKnowledgeCoreSampler(YouWebSearchHighlightsSampler):
+    """Sampler for Web Search with query-aware highlights and core knowledge."""
+
+    def _get_payload(self, query: str) -> Dict[str, Any]:
+        return {
+            **super()._get_payload(query),
+            "knowledge": "core",
+        }
+
+    def format_results(self, results: Any) -> list[str]:
+        knowledge = results.get("results", {}).get("knowledge")
+        knowledge_context = (
+            [f"knowledge: {json.dumps(knowledge, ensure_ascii=False)}"]
+            if knowledge is not None
+            else []
+        )
+        return knowledge_context + super().format_results(results)

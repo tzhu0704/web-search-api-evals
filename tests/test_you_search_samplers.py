@@ -3,6 +3,8 @@
 from evals.samplers.applied_samplers.you_search_sampler import (
     YouEcoSearchSampler,
     YouLiteSearchSampler,
+    YouWebSearchHighlightsKnowledgeCoreSampler,
+    YouWebSearchHighlightsSampler,
 )
 from evals.configs.samplers import NON_RESEARCH_SAMPLERS, SAMPLERS
 
@@ -72,6 +74,86 @@ def test_lite_search_posts_lite_mode_and_formats_highlights():
     ]
 
 
+def test_web_search_highlights_posts_extraction_and_formats_evidence():
+    """Catches loss of the highlights extraction request or nested response field."""
+    sampler = YouWebSearchHighlightsSampler(
+        sampler_name="you_search_with_highlights", api_key="test-key"
+    )
+
+    sampler._set_params()
+
+    assert sampler.base_url == "https://ydc-index.io"
+    assert sampler.endpoint == "/v1/search"
+    assert sampler.method == "POST"
+    assert sampler.headers["X-API-Key"] == "test-key"
+    assert sampler._get_payload("highlights query") == {
+        "query": "highlights query",
+        "count": 10,
+        "extraction": {"extraction_mode": "highlights"},
+    }
+    assert sampler.format_results(
+        {
+            "results": {
+                "web": [
+                    {
+                        "title": "Highlighted result",
+                        "url": "https://example.com/highlighted",
+                        "description": "A source description",
+                        "contents": {
+                            "highlights": ["first evidence", "second evidence"]
+                        },
+                    }
+                ]
+            }
+        }
+    ) == [
+        "[Highlighted result](https://example.com/highlighted)\n"
+        "highlights: first evidence second evidence\n"
+        "description: A source description"
+    ]
+
+
+def test_web_search_highlights_and_knowledge_core_combines_both_result_types():
+    """Catches loss of either combined extraction or structured knowledge context."""
+    sampler = YouWebSearchHighlightsKnowledgeCoreSampler(
+        sampler_name="you_search_with_highlights_and_knowledge_core",
+        api_key="test-key",
+    )
+
+    sampler._set_params()
+
+    assert sampler.base_url == "https://ydc-index.io"
+    assert sampler.endpoint == "/v1/search"
+    assert sampler.method == "POST"
+    assert sampler.headers["X-API-Key"] == "test-key"
+    assert sampler._get_payload("Apple market capitalization") == {
+        "query": "Apple market capitalization",
+        "knowledge": "core",
+        "count": 10,
+        "extraction": {"extraction_mode": "highlights"},
+    }
+    assert sampler.format_results(
+        {
+            "results": {
+                "knowledge": {"company": "Apple", "market_cap": "3T USD"},
+                "web": [
+                    {
+                        "title": "Apple market data",
+                        "url": "https://example.com/apple",
+                        "description": "Supporting web evidence",
+                        "contents": {"highlights": ["Apple is publicly traded."]},
+                    }
+                ],
+            }
+        }
+    ) == [
+        'knowledge: {"company": "Apple", "market_cap": "3T USD"}',
+        "[Apple market data](https://example.com/apple)\n"
+        "highlights: Apple is publicly traded.\n"
+        "description: Supporting web evidence",
+    ]
+
+
 def test_eco_and_lite_search_are_registered_for_default_evaluations():
     """Catches a sampler implementation that cannot be selected by the runner."""
     sampler_names = [sampler.sampler_name for sampler in SAMPLERS]
@@ -80,3 +162,7 @@ def test_eco_and_lite_search_are_registered_for_default_evaluations():
     assert "you_lite_search" in sampler_names
     assert "you_eco_search" in NON_RESEARCH_SAMPLERS
     assert "you_lite_search" in NON_RESEARCH_SAMPLERS
+    assert "you_search_with_highlights" in sampler_names
+    assert "you_search_with_highlights" in NON_RESEARCH_SAMPLERS
+    assert "you_search_with_highlights_and_knowledge_core" in sampler_names
+    assert "you_search_with_highlights_and_knowledge_core" in NON_RESEARCH_SAMPLERS

@@ -23,6 +23,8 @@ from evals.samplers.applied_samplers.you_search_sampler import (
     YouLivecrawlSampler,
     YouResearchSampler,
     YouSearchSnippetsSampler,
+    YouWebSearchHighlightsKnowledgeCoreSampler,
+    YouWebSearchHighlightsSampler,
 )
 
 
@@ -38,6 +40,14 @@ SAMPLERS = [
     ),
     YouLiteSearchSampler(
         sampler_name="you_lite_search",
+        api_key=os.getenv("YOU_API_KEY"),
+    ),
+    YouWebSearchHighlightsSampler(
+        sampler_name="you_search_with_highlights",
+        api_key=os.getenv("YOU_API_KEY"),
+    ),
+    YouWebSearchHighlightsKnowledgeCoreSampler(
+        sampler_name="you_search_with_highlights_and_knowledge_core",
         api_key=os.getenv("YOU_API_KEY"),
     ),
     YouResearchSampler(
